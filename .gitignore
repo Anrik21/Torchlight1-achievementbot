@@ -1,3 +1,6 @@
 # Ignored folders
 Pictures of fails/
 Pictures of wins/
+.psproj
+__pycache__/
+Saved Images/

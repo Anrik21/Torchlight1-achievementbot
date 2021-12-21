@@ -63,7 +63,7 @@ class Fisher(FishHelper):
         ## necessary for "optimisation"
         ## Variables for managing the program state
         deadline = time()
-        state = self.state_decide(self._needle_hole,self._needle_oktime,self._needle_fishbutton,self.grab_screen(True,dimensions=self._game_dimensions),0.9)
+        state = self.state_decide(clean_screen_img=self.grab_screen(True,dimensions=self._game_dimensions),threshold=0.9, one = self._needle_hole, two = self._needle_oktime, three = self._needle_fishbutton)
         fish_wins = 0
         fish_fails = 0
         min_wait = 4
@@ -79,7 +79,8 @@ class Fisher(FishHelper):
                 sleep(0.15) #naive attempt to limit amount of calculation with ~60fps
                 # states are 1 (fish), 2 (ok) , 3 (hole), 0 for state find
                 if state == 0:
-                    state = self.state_decide(self._needle_hole,self._needle_oktime,self._needle_fishbutton,self.grab_screen(True, dimensions=self._game_dimensions),0.86)
+                    fresh_screen = self.grab_screen(True, dimensions=self._game_dimensions)
+                    state = self.state_decide(clean_screen_img=fresh_screen, threshold = 0.86, one = self._needle_hole, two = self._needle_oktime,three = self._needle_fishbutton)
 ##                    if time_for_stats:
 ##                        self.stat_dict = print_some_stats(self.stat_dict)
 ##                        time_for_stats = False  ---------------------> move this to outside the class and handle program execution there

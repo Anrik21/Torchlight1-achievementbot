@@ -27,23 +27,41 @@ class FishHelper():
         keyboard.add_hotkey('space',self.on_space)
         keyboard.add_hotkey('shift+space',self.on_space)
 
-    def state_decide(self,hole_needle, ok_needle, fish_needle, clean_screen_img, threshold):
-        hole_result = self.get_matchtemplate_results(clean_screen_img, hole_needle)
-        fish_result = self.get_matchtemplate_results(clean_screen_img, fish_needle)
-        ok_result = self.get_matchtemplate_results(clean_screen_img, ok_needle)
+    def state_decide(self, clean_screen_img, threshold, **needles):
+        '''
+        This function takes N amount of states, an image to look for things in,
+        a threshold (value betwen 0 & 1), as well as a collection of needles which
+        will be attempted to be found in the image.
 
-        hole = hole_result["max_val"]
-        fish = fish_result["max_val"]
-        ok = ok_result["max_val"]
+        If the threshold is met with any of the needles, the program will return an integer
+        which is in the range of 1-N representing the needle which had the highest result in
+        the comparison in the picture.
 
-        if ok > threshold or hole > threshold or fish > threshold:
-            if fish > hole and fish > ok:
-                return 1
-            elif ok > fish and ok > hole:
-                return 2
-            else:
-                return 3
+        If the threshold is not met, 0 will be returned, use that for the state to look for state.
+        '''
+        needle_results = []
+        threshold_passed = False
+        for key, needle in needles.items():
+            result = self.get_matchtemplate_results(clean_screen_img, needle)
+            needle_results.append(result["max_val"])
+
+        for result in needle_results:
+            if result > threshold:
+                threshold_passed = True
+                break
+
+        state = 0
+        comparer = 0
+        if threshold_passed:
+            for val in range (1, len(needles)+1):
+                if needle_results[val-1] > comparer:
+                    comparer = needle_results[val-1]
+                    state = val
+                    print(f"Current highest val is {comparer}, with state {state}")
+
+            return state
         else:
+            print("Threshold not passed in state_decide")
             return 0
 
     def find_initial_fishing_hole(self,dimensions, hole_needle, fish_needle):

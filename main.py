@@ -49,11 +49,11 @@ def main(monitor = None):
         clickman.make_money()
         mode = clickman
 
-    if mode is not None and mode is not CoinClicker:
-        print("Program is exiting. Here are the final stats.")
-        stat_dict = mode.print_some_stats(mode.stat_dict, round(time() - deadline))
-    else:
-        print("Program exiting. Have fun achievementing")
+##    if mode is not None and mode is not CoinClicker:
+##        print("Program is exiting. Here are the final stats.")
+##        stat_dict = mode.print_some_stats(mode.stat_dict, round(time() - deadline))
+##    else:
+##        print("Program exiting. Have fun achievementing")
 
     sys.exit()
 
