@@ -1,5 +1,11 @@
 # Torchlight1-achievementbot
- This is a silly program that uses OpenCV's image recognition and tries to help the user achieve achievements. Currently only fishing implemented.
+ This is a silly program that uses OpenCV's image recognition and tries to help the user achieve achievements. 
+
+Program has two modes: 
+
+1. A fishing mode that tries to go fish & then run the fishing minigame.For the achievement "Fisher King".
+2. A clickermode that uses a glitch in a mod to make a lot of purchases of an item that costs -1 and then sell it. For achievements that need gold (~10+) as well as "Cash for Trash".
+
 
 NOTE: This program will use your mouse as you run it. pyautogui (which is the module that does it) has a failsafe: drag the mouse to a corner of the screen to have it trigger. Otherwhise: if you ever press space while the program is running it will trigger the program to exit as soon as possible.
 
