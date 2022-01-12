@@ -13,6 +13,7 @@ import sys
 from FisherHelper import FishHelper
 from FisherClass import Fisher
 from coinclicker import CoinClicker
+from CharacterKiller import WantonNihilist
 
 def main(monitor = None):
 
@@ -37,23 +38,19 @@ def main(monitor = None):
 ##        else:
 ##            print("Wrong input, input a value between 1-3")
 
-    val = 2
-    mode = None
+    val = 3
 
     if val == 1:
         fishman = Fisher(game_dimensions)
         fishman.go_fish()
-        mode = fishman
     if val == 2:
         clickman = CoinClicker(game_dimensions)
         clickman.make_money()
-        mode = clickman
-
-##    if mode is not None and mode is not CoinClicker:
-##        print("Program is exiting. Here are the final stats.")
-##        stat_dict = mode.print_some_stats(mode.stat_dict, round(time() - deadline))
-##    else:
-##        print("Program exiting. Have fun achievementing")
+    if val == 3: ## Potentially add a "how many deaths do you want?"
+        killman = WantonNihilist(game_dimensions)
+        killman.go_die()
+    if val == 4:
+        sys.exit()
 
     sys.exit()
 

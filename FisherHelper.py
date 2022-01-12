@@ -14,10 +14,16 @@ import pyautogui
 import random
 import keyboard
 import numpy
+import logging
+from datetime import datetime
 from pathlib import Path
 from glob import glob
 from mss import mss
 from time import time, sleep
+
+logging.basicConfig(format='%(levelname)s:%(message)s',filename="achievelog.log", level=logging.DEBUG)
+datetime_now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+logging.info(f"{datetime_now} - Logging started")
 
 class FishHelper():
     '''Contains helper functions to perform achievement tasks in torchlight'''
@@ -26,6 +32,10 @@ class FishHelper():
         self._time_to_fish = True
         keyboard.add_hotkey('space',self.on_space)
         keyboard.add_hotkey('shift+space',self.on_space)
+
+    def log_end(self):
+        datetime_now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        logging.info(f"{datetime_now} - Logging ended")
 
     def state_decide(self, clean_screen_img, threshold, **needles):
         '''
@@ -57,11 +67,11 @@ class FishHelper():
                 if needle_results[val-1] > comparer:
                     comparer = needle_results[val-1]
                     state = val
-                    print(f"Current highest val is {comparer}, with state {state}")
+                    logging.info(f"Current highest val is {comparer}, with state {state}")
 
             return state
         else:
-            print("Threshold not passed in state_decide")
+            logging.debug("Threshold not passed in state_decide")
             return 0
 
     def find_initial_fishing_hole(self,dimensions, hole_needle, fish_needle):
@@ -115,10 +125,10 @@ class FishHelper():
 
             max_val = result_dict["max_val"]
             max_loc = result_dict["max_loc"]
-            print(f"Max val is {max_val}")
+            logging.debug(f"Max val is {max_val}")
             if max_val > .90:
-                print(f"Max val was higher than 90%, so I think I found it at...")
-                print(f"Max val: {max_val} Max loc: {max_loc}")
+                logging.info(f"Max val was higher than 90%, so I think I found it at...")
+                logging.info(f"Max val: {max_val} Max loc: {max_loc}")
                 with mss() as sct:
                     mon = sct.monitors[monitor]
                 game_window = {
@@ -130,8 +140,11 @@ class FishHelper():
                 }
                 torch_found = True
             else:
-                print("Did not find it yet...")
+                logging.debug("Did not find it yet...")
             sleep(0.5)
+
+        if not torch_found:
+            logging.critical("Program window was not fun. Exiting.")
 
         return game_window
 
