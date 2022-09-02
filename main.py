@@ -9,11 +9,20 @@
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
 
+from pickle import TRUE
 import sys
+import this
 from FisherHelper import FishHelper
 from FisherClass import Fisher
 from coinclicker import CoinClicker
 from CharacterKiller import WantonNihilist
+
+def testing(helper : FishHelper, game_dimensions : dict[str, any]):
+    
+    testgrab = helper.grab_screen(TRUE, game_dimensions)
+    helper.save_picture(123, testgrab)
+
+    return
 
 def main(monitor = None):
 
@@ -24,21 +33,22 @@ def main(monitor = None):
     game_dimensions = helper.setup_game_screen(monitor)
 
     if game_dimensions is None:
-        sys.exit("Program was not able to find Torchlight within 15 seconds. Exiting")
+        print("Program was not able to find Torchlight within 15 seconds. Exiting")
+        sys.exit(0)
 
-##    print("Allright, Torchlight has been found. What do?\n1. Fish\n2. Click 4 gold\n3. Exit")
-##    while True:
-##        val = input()
-##        try:
-##            val = int(val)
-##        except:
-##            print("Wrong input, input only a value between 1-3")
-##        if val in range (1,3):
-##            break;
-##        else:
-##            print("Wrong input, input a value between 1-3")
+    print("Allright, Torchlight has been found. What do?\n1. Fish\n2. Click 4 gold\n3. Killman \n4. Exit")
+    while True:
+        val = input()
+        try:
+            val = int(val)
+        except:
+            print("Wrong input, input only a value between 1-3")
+        if val in range (1,6):
+            break;
+        else:
+            print("Wrong input, input a value between 1-3")
 
-    val = 3
+    #val = 3
 
     if val == 1:
         fishman = Fisher(game_dimensions)
@@ -51,8 +61,11 @@ def main(monitor = None):
         killman.go_die()
     if val == 4:
         sys.exit()
+    if val == 5:
+        testing(helper, game_dimensions)
 
-    sys.exit()
+
+    sys.exit(0)
 
 if __name__ == '__main__':
     main()

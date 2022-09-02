@@ -21,8 +21,9 @@ from glob import glob
 from mss import mss
 from time import time, sleep
 
-logging.basicConfig(format='%(levelname)s:%(message)s',filename="achievelog.log", level=logging.DEBUG)
-datetime_now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+datetime_now = datetime.now().strftime("%d-%m-%Y__%H-%M-%S")
+tempFileName = "achievelog{0}.log".format(datetime_now)
+logging.basicConfig(format='%(levelname)s:%(message)s',filename=tempFileName, level=logging.DEBUG)
 logging.info(f"{datetime_now} - Logging started")
 
 class FishHelper():

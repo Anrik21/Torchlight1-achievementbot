@@ -1,7 +1,12 @@
 # Ignored folders
 Pictures of fails/
 Pictures of wins/
-.psproj
-.log
+*.psproj
+*.log
 __pycache__/
 Saved Images/
+*.vsidx
+*.lock
+/.vs/Torchlight1-achievementbot/v17/.suo
+/.vs/VSWorkspaceState.json
+/.vs/slnx.sqlite
