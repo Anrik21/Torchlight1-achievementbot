@@ -8,6 +8,9 @@
 # Copyright:   (c) anrik 2021
 # Licence:     <your licence>
 #-------------------------------------------------------------------------------
+from ast import Num
+from email.policy import default
+from pickle import FALSE
 import cv2
 import sys
 import pyautogui
@@ -22,7 +25,8 @@ from mss import mss
 from time import time, sleep
 
 datetime_now = datetime.now().strftime("%d-%m-%Y__%H-%M-%S")
-tempFileName = "achievelog{0}.log".format(datetime_now)
+datetime_current_hour = datetime.now().strftime("%d-%m-%Y__%H")
+tempFileName = "achievelog{0}.log".format(datetime_current_hour)
 logging.basicConfig(format='%(levelname)s:%(message)s',filename=tempFileName, level=logging.DEBUG)
 logging.info(f"{datetime_now} - Logging started")
 
@@ -38,7 +42,7 @@ class FishHelper():
         datetime_now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
         logging.info(f"{datetime_now} - Logging ended")
 
-    def state_decide(self, clean_screen_img, threshold, **needles):
+    def state_decide(self, clean_screen_img, threshold : dict, **needles):
         '''
         This function takes N amount of states, an image to look for things in,
         a threshold (value betwen 0 & 1), as well as a collection of needles which
@@ -48,32 +52,41 @@ class FishHelper():
         which is in the range of 1-N representing the needle which had the highest result in
         the comparison in the picture.
 
-        If the threshold is not met, 0 will be returned, use that for the state to look for state.
+        If the threshold is not met, 0 will be returned, use that to keep looking for which state to be in.
         '''
-        needle_results = []
+        needle_results = {}
         threshold_passed = False
+        dict_val = 1
         for key, needle in needles.items():
             result = self.get_matchtemplate_results(clean_screen_img, needle)
-            needle_results.append(result["max_val"])
+            needle_results[dict_val] = result['max_val']
+            dict_val += 1
 
-        for result in needle_results:
-            if result > threshold:
+        for key, needle_result in needle_results.items():
+            if needle_result > threshold[key]:
                 threshold_passed = True
                 break
 
         state = 0
         comparer = 0
         if threshold_passed:
-            for val in range (1, len(needles)+1):
-                if needle_results[val-1] > comparer:
-                    comparer = needle_results[val-1]
-                    state = val
+            for key, val in needle_results.items():
+                if val > comparer:
+                    comparer = val
+                    state = key
                     logging.info(f"Current highest val is {comparer}, with state {state}")
 
             return state
+
         else:
-            logging.debug("Threshold not passed in state_decide")
-            return 0
+            for key, val in needle_results.items():
+                if val > comparer:
+                    comparer = val
+                    state = key
+                
+                logging.debug(f"Threshold ( {threshold[state]} ) not passed in state_decide. Current highest val is {comparer}, with state {state}")
+            
+        return 0
 
     def find_initial_fishing_hole(self,dimensions, hole_needle, fish_needle):
         self.find_and_click(dimensions, hole_needle, 0.9)
@@ -96,14 +109,21 @@ class FishHelper():
         if screen_grab is None and dimensions is not None:
             screen_grab = self.grab_screen(True,dimensions)
         if screen_grab is None and dimensions is None:
-            return false
+            return FALSE
         search = self.get_matchtemplate_results(screen_grab, needle)
 
         if search["max_val"] > threshold:
             return True
         return False
-
+   
     def find_and_click(self,game_dimensions, needle, threshold):
+        '''
+        Takes the game dimension, a needle of what to click and the threshold of likeness to click.
+
+        Returns true if the needle was found and clicked.
+
+        Returns false if the needle was not found (no click is made)
+        '''
         clean_source = self.grab_screen(True, game_dimensions)
         hole_search = self.get_matchtemplate_results(clean_source, needle)
         if hole_search["max_val"] > threshold:
@@ -223,7 +243,7 @@ class FishHelper():
             output_path = f"{folder}/PointPic{pic_ID}.png"
 
 
-        if point_one is not None and point_two is not none:
+        if point_one is not None and point_two is not None:
             cv2.rectangle(picture, point_one, point_two, (0,255,255), 2)
 
         attempt = cv2.imwrite(output_path, picture)

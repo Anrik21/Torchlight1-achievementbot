@@ -11,7 +11,6 @@
 
 from pickle import TRUE
 import sys
-import this
 from FisherHelper import FishHelper
 from FisherClass import Fisher
 from coinclicker import CoinClicker
@@ -37,18 +36,18 @@ def main(monitor = None):
         sys.exit(0)
 
     print("Allright, Torchlight has been found. What do?\n1. Fish\n2. Click 4 gold\n3. Killman \n4. Exit")
-    while True:
-        val = input()
-        try:
-            val = int(val)
-        except:
-            print("Wrong input, input only a value between 1-3")
-        if val in range (1,6):
-            break;
-        else:
-            print("Wrong input, input a value between 1-3")
+    #while True:
+    #    val = input()
+    #    try:
+    #        val = int(val)
+    #    except:
+    #        print("Wrong input, input only a value between 1-3")
+    #    if val in range (1,6):
+    #        break;
+    #    else:
+    #        print("Wrong input, input a value between 1-3")
 
-    #val = 3
+    val = 1
 
     if val == 1:
         fishman = Fisher(game_dimensions)
