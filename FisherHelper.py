@@ -35,8 +35,6 @@ class FishHelper():
 
     def __init__(self):
         self._time_to_fish = True
-        keyboard.add_hotkey('space',self.on_space)
-        keyboard.add_hotkey('shift+space',self.on_space)
 
     def log_end(self):
         datetime_now = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -298,5 +296,4 @@ class FishHelper():
 
         return stat_dict
 
-    def on_space(self):
-        self._time_to_fish = False
+  

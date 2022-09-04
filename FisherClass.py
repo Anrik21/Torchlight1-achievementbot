@@ -20,6 +20,7 @@ import random
 import pyautogui
 import sys
 from pathlib import Path
+from keyboard import add_hotkey
 from time import time,sleep
 
 class Fisher(FishHelper):
@@ -33,6 +34,7 @@ class Fisher(FishHelper):
     _fail_folder = Path.cwd()
     _win_folder = f"{_fail_folder}/Pictures of wins/"
     _fail_folder = f"{_fail_folder}/Pictures of fails/"
+    _time_to_fish = True
 
     _win_needles = {}
     _fail_needles = []
@@ -51,6 +53,9 @@ class Fisher(FishHelper):
         self._game_dimensions = game_dimensions
         FishHelper.__init__(self)
 
+    def on_space(self):
+        self._time_to_fish = False
+
 ## Variables needed to perform fishing
 
     def go_fish(self):
@@ -68,6 +73,8 @@ class Fisher(FishHelper):
                 print("Program did not find the initial fishing hole within 15 seconds. Exiting.")
                 sys.exit(0)
         ## necessary for "optimisation"
+        add_hotkey('space',self.on_space)
+
         ## Variables for managing the program state
         deadline = time()
         fish_wins = 0
@@ -76,7 +83,7 @@ class Fisher(FishHelper):
         max_wait = 12
         last_state = {}
         state_threshold = 0.75
-        state_text = {0 : "Looking for state", 1 : "Fish", 2: "Time to click OK", 3: "Look for fishing hole"}
+        state_text = {0 : "looking for state", 1 : "fishing", 2: "trying to click OK", 3: "looking for fishing hole"}
         all_state_thresholds = { 1 : state_threshold, 2 : state_threshold, 3 : state_threshold  }
 
         state = self.state_decide(clean_screen_img=self.grab_screen(True,dimensions=self._game_dimensions),
@@ -90,7 +97,7 @@ class Fisher(FishHelper):
         fishbutton_loc = ()
         ## Variables for managing the program state
 
-        while self._time_to_fish or time() - deadline < time_before_giving_up:
+        while self._time_to_fish and time() - deadline < time_before_giving_up:
                 sleep(0.15) #naive attempt to limit amount of calculation with ~60fps
                 # states are 1 (fish), 2 (ok) , 3 (hole), 0 for state find
                 if state == 0:
@@ -104,7 +111,7 @@ class Fisher(FishHelper):
                     print("\n##########")
                     print("Statefinding")
                     state = self.state_decide(clean_screen_img=fresh_screen, threshold=all_state_thresholds, one = self._needle_fishbutton, two = self._needle_oktime,three = self._needle_hole)
-                    print("I think I'm in {0}".format(state_text[state]))
+                    print("I think I'm {0}".format(state_text[state]))
                     print("##########\n")
 
                     # After a state has been picked, clean up the nudging
@@ -188,7 +195,7 @@ class Fisher(FishHelper):
                             result = self.get_matchtemplate_results(clean_screen,self._needle_fishbutton)
                             
                             for i in self._win_needles:
-                                if self.find_item_on_screen(self._win_needles[i]["image"] ,0.85 - risk,screen_grab=clean_screen):
+                                if self.find_item_on_screen(self._win_needles[i]["image"] ,0.88 - risk,screen_grab=clean_screen):
                                     time_to_click = True
                                     most_recent_winner = i
                                     print("I think i found the time to click.")
@@ -196,7 +203,7 @@ class Fisher(FishHelper):
 
                             if time_to_click:
                                 for needle in self._fail_needles:
-                                    if self.find_item_on_screen(needle,0.95 + risk,screen_grab=clean_screen):
+                                    if self.find_item_on_screen(needle,0.94 + risk,screen_grab=clean_screen):
                                         time_to_click = False
                                         print("... but still pretty likely to have a fail, click stopped.")
                                         break
@@ -204,7 +211,7 @@ class Fisher(FishHelper):
                             if not time_to_click and time() - click_deadline > 45:
                                 if risk == 0:
                                     print("Needle strategy is being slow, increasing risk every cycle.")
-                                risk += 0.005
+                                risk += 0.0001
 
                             if time_to_click:
 
@@ -240,7 +247,6 @@ class Fisher(FishHelper):
                         state = state_check
                     except:
                         state = 0
-
 
                 if state == 2:
                     if self.find_item_on_screen(self._needle_nothing,0.85, dimensions=self._game_dimensions):
@@ -296,8 +302,21 @@ class Fisher(FishHelper):
                     
                     state = 0
 
-        logger.log(1, "Finished fishing. Semistats.")
-        logger.log(1, "Attempts: {}".format(self.stat_dict["attempts"]))
-        logger.log(1, "Wins: {}".format(self.stat_dict["total_fish_caught"]))
-        logger.log(2, "Win needles dict", self._win_needles)
+        logger.debug( "Finished fishing. Semistats.")
+        try:
+            logger.debug( "Attempts: {}".format(self.stat_dict["attempts"]))
+            logger.debug( "Wins: {}".format(self.stat_dict["total_fish_caught"]))
+        except:
+            logger.debug("No attempts or wins to log.")
+        
+        logger.debug("Stats for the final win needles.")    
+        try:
+            for i in self._win_needles:
+                logger.debug(f"Needle no: {i}. Wins: " + str(self._win_needles[i]["wins"]))
+        except:
+            logger.debug("No stats to print (or there were and an exception was thrown)")
+
+        return
+
+
 

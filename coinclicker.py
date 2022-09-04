@@ -13,9 +13,11 @@
 #
 #-------------------------------------------------------------------------------
 
+from colorsys import ONE_SIXTH
 import cv2, pyautogui, keyboard, pytesseract
 from time import time,sleep
 from FisherHelper import FishHelper
+from keyboard import add_hotkey
 
 class CoinClicker(FishHelper):
     _needle_buy = cv2.imread("needle_buy.png")
@@ -25,11 +27,14 @@ class CoinClicker(FishHelper):
 
     _leftside_dimensions = None
     _rightside_dimensions = None
+    
+    _time_for_clicking = True
 
-    stat_dict = {"best_perf" : 0.7,
+    stat_dict = {"best_perf" : 0,
     "clicks" : 0,
     "starting_gold" : 0,
-    "current_gold" : 0
+    "current_gold" : 0,
+    "total_gold_made" : 0
     }
 
     def __init__(self, game_dimensions):
@@ -59,6 +64,41 @@ class CoinClicker(FishHelper):
         self._x_sell_pos = 892 + game_dimensions["left"]
         self._y_sell_pos = 740 + game_dimensions["top"]
 
+    def on_space(self):
+        self._time_for_clicking = False
+
+    def click_then_sell(self, click_dur):
+        keyboard.press('shift')
+        sleep(click_dur)
+        pyautogui.click(x = self._x_buy_pos, y = self._y_buy_pos)
+        sleep(click_dur)
+        pyautogui.click(x = self._x_sell_pos, y = self._y_sell_pos)
+        keyboard.release('shift')
+        self.stat_dict["clicks"] += 1
+
+    def buy_max_then_sell(self, click_dur):
+        
+        keyboard.press('shift')
+
+        pyautogui.moveTo(x = self._x_buy_pos, y = self._y_buy_pos, duration=click_dur*2)
+
+        # 210 clicks to fill an inventory
+        for i in range(0, 210):
+            if (self._time_for_clicking):
+                pyautogui.click(x = self._x_buy_pos, y = self._y_buy_pos)
+
+        for j in range(0, 3):
+            pyautogui.moveTo(x = self._x_sell_pos, y = self._y_sell_pos + (j * 80), duration=click_dur*2)
+            for i in range(0, 8):
+                if (self._time_for_clicking):
+                    pyautogui.click(x = self._x_sell_pos + (i * 47), y = self._y_sell_pos + (j * 80), duration = click_dur)
+                    if i == 7:
+                        pyautogui.click(x = self._x_sell_pos + (i * 47), y = self._y_sell_pos + (j * 80), duration = click_dur)
+
+        keyboard.release('shift')
+        self.stat_dict["clicks"] += 210
+            
+
     def make_money(self, money_to_make = None):
         '''
         Clicks on the screen! If your game is set to the correct resolution and you have the same mods,
@@ -77,37 +117,45 @@ class CoinClicker(FishHelper):
         # 1. Look for merchant. 2. Do click (leave by itself after N clicks) 3. Do the number magic
         deadline = None
         regular_state_check = True
-        modulo_var = 100
+        clicks_before_break = 210
+        iterations = 0
+        threshold = { 1 : 0.7 , 2 : 0.7}
+        
+        add_hotkey('space', self.on_space)
 
-        while self._time_to_fish:
+        while self._time_for_clicking:
 
             if state == 0:
                 clean_img = self.grab_screen(True, dimensions = self._game_dimensions)
                 if regular_state_check:
-                    state = self.state_decide(clean_screen_img=clean_img, threshold=0.82, one = self._needle_retry_shop, two = self._needle_shopping)
+                    state = self.state_decide(clean_screen_img=clean_img, threshold=threshold, one = self._needle_retry_shop, two = self._needle_shopping)
                 else:
                     state = 3
                     regular_state_check = True
 
             if state == 1:
+                print("Looking for shop")
                 if self.find_and_click(self._game_dimensions,self._needle_retry_shop,0.75):
                     sleep(1.5)
                     state = 0
 
             if state == 2:
-                if self.stat_dict["starting_gold"] == 0:
+                print("Double checking that i'm in the right state.")
+                state = self.state_decide(clean_screen_img=clean_img, threshold=threshold, one = self._needle_retry_shop, two = self._needle_shopping)
+                if state != 2:
+                    print("Stateconfusion, returning to statechecker to try and reset.")
+                    state = 0
+                    regular_state_check = True
+                elif self.stat_dict["starting_gold"]  == 0:
                     self.stat_dict["starting_gold"] = self.get_gold_number()
                     print("Starting to click with {} starting gold.".format(self.stat_dict["starting_gold"]))
-                keyboard.press('shift')
-                sleep(click_dur)
-                pyautogui.click(x = self._x_buy_pos, y = self._y_buy_pos)
-                sleep(click_dur)
-                pyautogui.click(x = self._x_sell_pos, y = self._y_sell_pos)
-                keyboard.release('shift')
-                self.stat_dict["clicks"] += 1
-                if self.stat_dict["clicks"] % modulo_var == 0:
+
+                self.buy_max_then_sell(click_dur)
+
+                if self.stat_dict["clicks"] > clicks_before_break:
                     clicks = self.stat_dict["clicks"]
                     print(f"Clicking has been done {clicks} times, time for evaluation")
+                    iterations += 1
                     regular_state_check = False
                     state = 0
 
@@ -117,32 +165,43 @@ class CoinClicker(FishHelper):
                     if self.stat_dict["current_gold"] != 0:
                         last_curr_gold = self.stat_dict["current_gold"]
                         self.stat_dict["current_gold"] = get_gold
-                        performance = curr_perf
-                        curr_perf = self.stat_dict["current_gold"] - last_curr_gold
+                        curr_perf = get_gold - last_curr_gold
                     else:
                         self.stat_dict["current_gold"] = get_gold
-                        curr_perf = self.stat_dict["current_gold"] - self.stat_dict["starting_gold"]
-                        performance = self.stat_dict["best_perf"]
+                        curr_perf = get_gold - self.stat_dict["starting_gold"]
+                    
+                    self.stat_dict["total_gold_made"] += curr_perf
+                    print("\n####################################")
+                    print("Starting gold was {}\nCurrent gold {}\nGold made this iteration {}".format(self.stat_dict["starting_gold"], self.stat_dict["current_gold"], curr_perf))
+                    print("Total gold made {}".format(self.stat_dict["total_gold_made"]))
 
-                    print("Starting gold was {}\nCurrent gold {}\nGold made {}".format(self.stat_dict["starting_gold"], self.stat_dict["current_gold"], curr_perf))
-                    print(f"Clicks since last check: {modulo_var}")
-
-                    curr_perf = curr_perf / 6
-                    curr_perf = curr_perf / modulo_var
-
-                    if curr_perf < performance:
-                        print(f"Performance is {curr_perf}, below last performance of {performance}. Making clicking slower")
-                        click_dur += 0.01
+                    #Assume that clicks were perfect & also allow for a miss of 10x
+                    expected_perf = (210 * 6) - 60
+                    
+                    if curr_perf < expected_perf:
+                        print(f"Performance is {curr_perf}, below the expected performance of {expected_perf}.")
+                        self.stat_dict["best_perf"] -= 1
                     else:
-                        print(f"Performance is {curr_perf}, above last performance of {performance}. Making clicking faster")
+                        print(f"Performance is {curr_perf}, above the expected performance of {expected_perf}.")
+                        self.stat_dict["best_perf"] += 1
+
+                    if self.stat_dict["best_perf"] > 4:
+                        print("Performance of 4 last attempts was over the expected. Increasing the clickspeed and interval length.")
+                        clicks_before_break += 210
+                        self.stat_dict["best_perf"] = 0
                         if click_dur - 0.01 != 0:
                             click_dur -= 0.01
-                        self.stat_dict["best_perf"] = curr_perf
 
-                    if curr_perf > .95:
-                        modulo_var += 100
+                    if self.stat_dict["best_perf"] < -2:
+                        print("Performance has been poor for 2 iterations. Decreasing the clickspeed and resetting interval length.")
+                        clicks_before_break = 100
+                        self.stat_dict["best_perf"] = 0
+                        click_dur += 0.01 
+
+                    print("####################################\n")
+
                 else:
-                    print(f"Program failed to read value on screen, will retry in {modulo_var} clicks.")
+                    print(f"Program failed to read value on screen, will retry in {clicks_before_break} clicks.")
 
                 state = 0
 
@@ -198,3 +257,4 @@ class CoinClicker(FishHelper):
 
         #print(output_text)
         return output_text
+
